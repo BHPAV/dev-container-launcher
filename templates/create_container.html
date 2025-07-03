@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Create Container - Dev Container Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Create New Container</h2>
+            </div>
+            <div class="card-body">
+                <form id="create-container-form">
+                    <div class="mb-3">
+                        <label for="container-name" class="form-label">Container Name</label>
+                        <input type="text" class="form-control" id="container-name" required 
+                               pattern="^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+                               placeholder="my-project">
+                        <div class="form-text">
+                            Name must start with a letter or number and can contain letters, numbers, dots, dashes, and underscores.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="container-image" class="form-label">Docker Image</label>
+                        <select class="form-select" id="container-image">
+                            <option value="{{ default_image }}" selected>Base Image ({{ default_image }})</option>
+                            <optgroup label="Language-Specific Images">
+                                {% for lang, image in language_images.items() %}
+                                <option value="{{ image }}">{{ lang|title }} ({{ image }})</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="volume-path" class="form-label">Volume Mount Path (Optional)</label>
+                        <input type="text" class="form-control" id="volume-path" 
+                               placeholder="Leave empty to use current directory">
+                        <div class="form-text">
+                            Path to mount as /workspace in the container. Must be within allowed directories.
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create Container
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Progress Modal -->
+        <div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Creating Container...</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 100%"></div>
+                        </div>
+                        <p class="mt-3 mb-0" id="progress-message">Setting up your development environment...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('create-container-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('container-name').value;
+    const image = document.getElementById('container-image').value;
+    const volume = document.getElementById('volume-path').value;
+    
+    // Validate name
+    const namePattern = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
+    if (!namePattern.test(name)) {
+        showToast('Invalid container name', 'error');
+        return;
+    }
+    
+    // Show progress modal
+    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+    progressModal.show();
+    
+    // Create container
+    fetch('/api/containers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: name,
+            image: image,
+            volume: volume || null
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(`Container ${name} created successfully on port ${data.data.port}`, 'success');
+            // Redirect to container list
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        } else {
+            progressModal.hide();
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        progressModal.hide();
+        showToast(`Failed to create container: ${error}`, 'error');
+    });
+});
+
+// WebSocket event for container creation
+socket.on('container_created', function(data) {
+    document.getElementById('progress-message').textContent = 
+        `Container ${data.name} created successfully on port ${data.port}!`;
+});
+</script>
+{% endblock %}

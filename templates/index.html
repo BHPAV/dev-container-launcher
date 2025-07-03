@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Containers - Dev Container Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Development Containers</h1>
+            <div>
+                <button class="btn btn-secondary" onclick="refreshContainers()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <a href="{{ url_for('create_form') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create Container
+                </a>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading-spinner" class="text-center my-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Container Table -->
+        <div id="container-table-wrapper">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Port</th>
+                        <th>Image</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="container-list">
+                    <!-- Containers will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="text-center my-5" style="display: none;">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <h3 class="text-muted mt-3">No containers found</h3>
+            <p class="text-muted">Create your first development container to get started.</p>
+            <a href="{{ url_for('create_form') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Container
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete container <strong id="delete-container-name"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Container management functions
+let containerToDelete = null;
+
+function loadContainers() {
+    document.getElementById('loading-spinner').style.display = 'block';
+    document.getElementById('container-table-wrapper').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+
+    fetch('/api/containers')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                displayContainers(data.data);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading containers:', error);
+            showToast('Failed to load containers', 'error');
+        })
+        .finally(() => {
+            document.getElementById('loading-spinner').style.display = 'none';
+        });
+}
+
+function displayContainers(containers) {
+    const tbody = document.getElementById('container-list');
+    tbody.innerHTML = '';
+
+    if (containers.length === 0) {
+        document.getElementById('container-table-wrapper').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'block';
+        return;
+    }
+
+    document.getElementById('container-table-wrapper').style.display = 'block';
+    document.getElementById('empty-state').style.display = 'none';
+
+    containers.forEach(container => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <i class="bi bi-box me-2"></i>
+                <a href="/container/${container.name}">${container.name}</a>
+            </td>
+            <td>${getStatusBadge(container.status)}</td>
+            <td>${container.port}</td>
+            <td><code>${container.image}</code></td>
+            <td>
+                <div class="btn-group btn-group-sm" role="group">
+                    ${getActionButtons(container)}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'running': '<span class="badge bg-success"><i class="bi bi-circle-fill"></i> Running</span>',
+        'exited': '<span class="badge bg-secondary"><i class="bi bi-circle"></i> Stopped</span>',
+        'paused': '<span class="badge bg-warning"><i class="bi bi-pause-circle"></i> Paused</span>',
+        'restarting': '<span class="badge bg-info"><i class="bi bi-arrow-repeat"></i> Restarting</span>'
+    };
+    return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+}
+
+function getActionButtons(container) {
+    let buttons = '';
+    
+    if (container.status === 'running') {
+        buttons += `
+            <button class="btn btn-success" onclick="openInCursor('${container.name}')" title="Open in Cursor">
+                <i class="bi bi-code"></i>
+            </button>
+            <button class="btn btn-warning" onclick="stopContainer('${container.name}')" title="Stop">
+                <i class="bi bi-stop-circle"></i>
+            </button>
+        `;
+    } else {
+        buttons += `
+            <button class="btn btn-primary" onclick="startContainer('${container.name}')" title="Start">
+                <i class="bi bi-play-circle"></i>
+            </button>
+        `;
+    }
+    
+    buttons += `
+        <button class="btn btn-danger" onclick="deleteContainer('${container.name}')" title="Delete">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+    
+    return buttons;
+}
+
+function refreshContainers() {
+    showToast('Refreshing containers...', 'info');
+    loadContainers();
+}
+
+function startContainer(name) {
+    fetch(`/api/containers/${name}/start`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(`Container ${name} started`, 'success');
+                loadContainers();
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showToast(`Failed to start container: ${error}`, 'error');
+        });
+}
+
+function stopContainer(name) {
+    fetch(`/api/containers/${name}/stop`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(`Container ${name} stopped`, 'success');
+                loadContainers();
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showToast(`Failed to stop container: ${error}`, 'error');
+        });
+}
+
+function openInCursor(name) {
+    fetch(`/api/containers/${name}/open`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(`Opening ${name} in Cursor...`, 'success');
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showToast(`Failed to open container: ${error}`, 'error');
+        });
+}
+
+function deleteContainer(name) {
+    containerToDelete = name;
+    document.getElementById('delete-container-name').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function confirmDelete() {
+    if (!containerToDelete) return;
+    
+    fetch(`/api/containers/${containerToDelete}`, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(`Container ${containerToDelete} deleted`, 'success');
+                loadContainers();
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showToast(`Failed to delete container: ${error}`, 'error');
+        })
+        .finally(() => {
+            containerToDelete = null;
+            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+        });
+}
+
+// Load containers on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadContainers();
+});
+
+// WebSocket updates
+socket.on('container_update', function(data) {
+    displayContainers(data.containers);
+});
+</script>
+{% endblock %}

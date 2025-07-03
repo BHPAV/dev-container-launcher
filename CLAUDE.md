@@ -167,6 +167,36 @@ This project is version controlled with Git and hosted on GitHub:
 - `git push` - Push to GitHub
 - `git pull` - Pull latest changes
 
+## Flask Web Interface
+
+The Flask web interface provides a modern GUI alternative to the CLI and TUI, running on port 5000 by default.
+
+### Running the Web Interface
+- `make web` - Start Flask in development mode (auto-kills conflicting processes)
+- `make web-prod` - Start Flask with Gunicorn for production
+- `make web-alt` - Start Flask on alternative port (5001)
+- `FLASK_PORT=8080 make web` - Start on custom port
+
+### Port Management
+**Common Issues:**
+- If port 5000 is in use (often by macOS ControlCenter), the Makefile automatically kills the process
+- To manually check port: `python scripts/port_utils.py check`
+- To find free port: `python scripts/port_utils.py find`
+- To kill process on port: `python scripts/port_utils.py kill 5000`
+
+### Configuration
+Flask settings can be configured via environment variables:
+- `FLASK_PORT` - Port to run on (default: 5000)
+- `FLASK_HOST` - Host to bind to (default: 0.0.0.0)
+- `FLASK_DEBUG` - Enable debug mode (default: False)
+
+### Features
+- Real-time container status updates via WebSocket
+- Responsive design with Bootstrap 5
+- Dark mode support (follows system preference)
+- RESTful API for programmatic access
+- Full integration with existing CLI/TUI
+
 ## Session Management
 
 **IMPORTANT**: When ending a development session, always:
