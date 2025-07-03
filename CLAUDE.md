@@ -152,3 +152,26 @@ User → app.py (UI) → devctl.py (Core) → Docker API
 - Modular architecture
 - Removed unused dependencies
 - Better separation of concerns
+
+## Git Repository
+
+This project is version controlled with Git and hosted on GitHub:
+- **Repository**: https://github.com/BHPAV/dev-container-launcher
+- **Remote**: origin (https://github.com/BHPAV/dev-container-launcher.git)
+- **Branch**: main (default)
+
+### Git Commands
+- `git status` - Check repository status
+- `git add .` - Stage all changes
+- `git commit -m "message"` - Commit changes
+- `git push` - Push to GitHub
+- `git pull` - Pull latest changes
+
+## Session Management
+
+**IMPORTANT**: When ending a development session, always:
+1. Commit any uncommitted changes with descriptive messages
+2. Push changes to GitHub to ensure work is preserved
+3. Update this CLAUDE.md file if any significant changes were made to the project structure or workflow
+
+This ensures continuity between sessions and prevents work loss.

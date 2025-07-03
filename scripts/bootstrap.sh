@@ -51,7 +51,7 @@ fi
 
 # Build base image
 echo "Building base Docker image..."
-python devctl.py build
+python scripts/devctl.py build
 
 echo ""
 echo "✅ Setup complete!"

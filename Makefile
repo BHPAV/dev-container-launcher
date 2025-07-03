@@ -17,15 +17,15 @@ install:
 	pip install -r requirements.txt
 
 build:
-	python devctl.py build
+	python scripts/devctl.py build
 
 build-all: build
 	@echo "Building Python 3.12 image..."
-	docker build -f images/python-3.12.Dockerfile -t python-3.12 .
+	docker build -f docker/images/python-3.12.Dockerfile -t python-3.12 .
 	@echo "Building Node.js 20 image..."
-	docker build -f images/node-20.Dockerfile -t node-20 .
+	docker build -f docker/images/node-20.Dockerfile -t node-20 .
 	@echo "Building Go 1.22 image..."
-	docker build -f images/go-1.22.Dockerfile -t go-1.22 .
+	docker build -f docker/images/go-1.22.Dockerfile -t go-1.22 .
 	@echo "All images built successfully!"
 
 run:

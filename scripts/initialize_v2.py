@@ -244,7 +244,7 @@ def main():
     logger.info("🚀 Initializing Dev-Container Launcher v2...")
     
     # Check we're in the right directory
-    if not Path("devctl.py").exists():
+    if not Path("scripts/devctl.py").exists():
         logger.error("Please run this script from the project root directory")
         sys.exit(1)
     

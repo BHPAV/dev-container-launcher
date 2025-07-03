@@ -44,7 +44,7 @@ def _free_port() -> int:
         logger.error(f"Failed to find free port: {e}")
         raise
 
-def build_image(tag: str = IMAGE_TAG, dockerfile: str = "Dockerfile") -> None:
+def build_image(tag: str = IMAGE_TAG, dockerfile: str = "docker/Dockerfile") -> None:
     """Build the Docker image for dev containers."""
     try:
         logger.info(f"Building image {tag} from {dockerfile}")
@@ -385,7 +385,7 @@ if __name__ == "__main__":
 
     @cli.command()
     @click.option("--tag", default=IMAGE_TAG, help="Image tag")
-    @click.option("--dockerfile", default="Dockerfile", help="Dockerfile to use")
+    @click.option("--dockerfile", default="docker/Dockerfile", help="Dockerfile to use")
     def build(tag, dockerfile):
         """Build the dev container image."""
         try:

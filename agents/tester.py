@@ -179,7 +179,7 @@ class TesterAgent(BaseAgent):
         
         # Test 1: Can build image
         try:
-            subprocess.run(["python", "devctl.py", "build"], check=True)
+            subprocess.run(["python", "scripts/devctl.py", "build"], check=True)
             tests_passed.append("Image build")
         except:
             tests_failed.append("Image build")
@@ -187,7 +187,7 @@ class TesterAgent(BaseAgent):
         # Test 2: Can create container
         try:
             result = subprocess.run(
-                ["python", "devctl.py", "new", "test-smoke"],
+                ["python", "scripts/devctl.py", "new", "test-smoke"],
                 capture_output=True,
                 text=True,
                 check=True
@@ -196,7 +196,7 @@ class TesterAgent(BaseAgent):
             
             # Test 3: Can list containers
             result = subprocess.run(
-                ["python", "devctl.py", "ls"],
+                ["python", "scripts/devctl.py", "ls"],
                 capture_output=True,
                 text=True,
                 check=True

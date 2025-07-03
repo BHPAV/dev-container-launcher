@@ -7,7 +7,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 import logging
 
-import devctl
+from scripts import devctl
 from config import CONTAINER_PREFIX, IMAGE_TAG
 from utils import validate_container_name, logger
 
