@@ -28,7 +28,7 @@ ENV LANG=en_US.UTF-8 \
 # Create user with specific sudo permissions
 RUN useradd -m -u ${UID} -s /bin/bash ${USER} && \
     mkdir -p /etc/sudoers.d && \
-    echo "${USER} ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/pip3, /usr/bin/npm, /usr/bin/yarn" > /etc/sudoers.d/${USER} && \
+    echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER} && \
     chmod 0440 /etc/sudoers.d/${USER}
 
 # Configure SSH
